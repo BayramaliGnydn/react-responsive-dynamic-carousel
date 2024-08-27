@@ -1,0 +1,85 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Output of build process
+dist/
+build/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor-specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Jest coverage reports
+coverage/
+
+# .env files for environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# MacOS
+.DS_Store
+
+# Typescript
+*.tsbuildinfo
+
+# Package-lock files (optional, depending on your versioning strategy)
+package-lock.json
+yarn.lock
+
+# Ignore build artifacts
+*.js
+*.d.ts
+*.map
+
+# Ignore Rollup cache
+.rollup.cache/
+
+# Storybook build output
+storybook-static/
+
+# Local environment
+.env.local
+
+# NPM Cache
+.npm
+
+# Parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# eslint cache
+.eslintcache
+
+# Stylelint cache
+.stylelintcache
+
+# Next.js build output
+.next/
+out/
+
+# VS Code settings and extensions
+.vscode/

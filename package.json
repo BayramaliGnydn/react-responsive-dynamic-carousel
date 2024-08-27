@@ -1,0 +1,41 @@
+{
+  "name": "react-responsive-carousel",
+  "version": "1.0.0",
+  "description": "react responsive carousel",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c --bundleConfigAsCjs"
+  },
+  "main": "dist/bundle.cjs.js",
+  "module": "dist/bundle.esm.js",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "react",
+    "component",
+    "carousel",
+    "responsive"
+  ],
+  "author": "Bayramali Günaydın",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/your-repo-name.git"
+  },
+  "devDependencies": {
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/react": "^18.3.4",
+    "rollup": "^4.21.1",
+    "rollup-plugin-postcss": "^4.0.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "tslib": "^2.7.0"
+  }
+}
