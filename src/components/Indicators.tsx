@@ -41,11 +41,12 @@ const Indicators = ({
     })
     
   return (
-    <div style={{ bottom: '5%', gap: '$xs', left: '50%', position: 'absolute', transform: 'translateX(-50%)', zIndex: 99 }}>
+    <div style={{ bottom: '5%', gap: '5px', left: '50%', position: 'absolute', transform: 'translateX(-50%)', zIndex: 99, display:'flex' }}>
       {array.map((_, index) => (
         <button
           key={index}
           style={{
+            cursor:'pointer',
             background: 'White',
             border: '1px solid black',
             bottom: -10,

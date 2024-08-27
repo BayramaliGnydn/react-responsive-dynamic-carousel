@@ -198,8 +198,7 @@ const ReactCarousel = ({
           Math.floor(maxWidth / itemW) // ekrana sığan maximum eleman sayısı
         renderedItem /* renderlanacak eleman sayısı */ = maxItem < calculatedItemCount ?
           maxItem : calculatedItemCount
-          console.log(renderedItem)
-        setRenderedItemCount(renderedItem)
+        setRenderedItemCount(renderedItem === 0 ? 1 : renderedItem)
       }//maxItem 1 değilse renderlanacak item sayısı belirleme
 
       const gapWidth = parseFloat(containerRef.current.style.gap)
@@ -231,7 +230,6 @@ const ReactCarousel = ({
         //tekli gösterimde mevcut datanın sonuna geldiyse ise ilk indexe döner
       }
       else {
-        console.log(renderedItemCount,prevIndex)
         if (data.length === renderedItemCount + prevIndex - (viewportWidth.current! < 650 ? 1 : 0)) {
           newIndex = 0
           newTranslate = 0
@@ -303,7 +301,7 @@ const ReactCarousel = ({
     })
 
   return (
-    <div ref={boxRef} style={{ position: 'relative', width: '100%' }}>
+    <div ref={boxRef} style={{ position: 'relative', width: '100%' }} id='react-carousel'>
       <div
         style={{ display: 'flex', height: 'fit-content', overflow: 'hidden', position: 'static', width: '100%' }}
       >
