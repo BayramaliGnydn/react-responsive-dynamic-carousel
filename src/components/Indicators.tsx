@@ -11,6 +11,7 @@ interface IndicatorsProps {
   style?: React.CSSProperties;
   timer: React.MutableRefObject<ReturnType<typeof setInterval> | null>;
   totalItemWidth: number;
+  currentStyle?:React.CSSProperties;
 }
 
 const Indicators = ({
@@ -24,6 +25,7 @@ const Indicators = ({
   timer,
   renderedItemCount,
   style,
+  currentStyle,
 }: IndicatorsProps) => {
   const array = Array.from({ length: count - renderedItemCount + 1 }, (_, i) => i + 1)
   const onIndicatorClick = (index: number) =>
@@ -54,10 +56,11 @@ const Indicators = ({
             borderRadius: '50%',
             height: 15,
             minWidth: 0,
-            opacity: current === index ? 1 : 0.4,
+            opacity: 0.4,
             padding: 0,
             width: 15,
-            ...style
+            ...style,
+            ...(current === index ? currentStyle ? currentStyle:{opacity:1}:{}),
           }}
           onClick={() => onIndicatorClick(index)}
         />

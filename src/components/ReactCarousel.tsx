@@ -1,8 +1,9 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import Indicators from './Indicators';
 import { NextButton, PrevButton } from './Buttons';
+import '../style/index.css'
 
-interface ClientCarouselProps {
+interface ReactCarouselProps {
   Component: React.ElementType;
   autoPlay?: boolean;
   autoPlayTime?: number;
@@ -10,7 +11,7 @@ interface ClientCarouselProps {
   containerStyle?:  React.CSSProperties;
   data: any;
   extraWidth?: number;
-  indicatorsStyle?:  React.CSSProperties;
+  indicatorsStyle?:  {style?:React.CSSProperties,currentStyle?:React.CSSProperties};
   maxItem?: number;
   nextButtonStyle?:  React.CSSProperties;
   prevButtonStyle?: React.CSSProperties;
@@ -19,6 +20,8 @@ interface ClientCarouselProps {
   renderButton?: boolean;
   renderIndicators?: boolean;
   tolerance?: number;
+  step?: number;
+  buttonSize?: number;
 }
 
 const ReactCarousel = ({
@@ -38,7 +41,9 @@ const ReactCarousel = ({
   autoPlayTime = 2000,
   props,
   tolerance = 100,
-}: ClientCarouselProps) => {
+  step,
+  buttonSize,
+}: ReactCarouselProps) => {
   const [startX, setStartX] = useState(0)
   const [startY, setStartY] = useState(0)
   const [currentTranslate, setCurrentTranslate] = useState(0)
@@ -163,7 +168,7 @@ const ReactCarousel = ({
     if (autoPlayTimer.current) {
       clearInterval(autoPlayTimer.current)
     }
-    if (autoPlay && itemWidth > 0) {
+    if (autoPlay && itemWidth > 0 && data.length > renderedItemCount) {
       autoPlayTimer.current = setInterval(autoPlayFunc, autoPlayTime)
     }
     return () => {
@@ -270,7 +275,7 @@ const ReactCarousel = ({
       if (autoPlayTimer.current) {
         clearInterval(autoPlayTimer.current)
       }//kullanıcı geri butonuna tıklarsa autoplay durur
-      let newTranslate = (prevIndex - 1) * (itemWidth + gapWidth)
+      let newTranslate = (prevIndex - (step ?? 1)) * (itemWidth + gapWidth)
 
       setCurrentTranslate(newTranslate)
 
@@ -279,7 +284,7 @@ const ReactCarousel = ({
         containerRef.current.style.transform = `translate3d(-${newTranslate}px,0,0)`
       }
 
-      return prevIndex - 1
+      return prevIndex - (step ?? 1)
     })
 
   const onNextClick = () =>
@@ -288,7 +293,7 @@ const ReactCarousel = ({
         clearInterval(autoPlayTimer.current)
       }//kullanıcı ileri butonuna tıklarsa autoplay durur
 
-      let newTranslate = (prevIndex + 1) * (itemWidth + gapWidth)
+      let newTranslate = (prevIndex + (step ?? 1)) * (itemWidth + gapWidth)
 
       setCurrentTranslate(newTranslate)
 
@@ -297,7 +302,7 @@ const ReactCarousel = ({
         containerRef.current.style.transform = `translate3d(-${newTranslate}px,0,0)`
       }
 
-      return prevIndex + 1
+      return prevIndex + (step ?? 1)
     })
 
   return (
@@ -310,10 +315,10 @@ const ReactCarousel = ({
             {currentIndex < data?.length -
               renderedItemCount &&
               (
-                <NextButton style={nextButtonStyle} onNextClick={onNextClick} />
+                <NextButton style={nextButtonStyle} onNextClick={onNextClick} size={buttonSize} />
               )}
             {currentIndex != 0 && (
-              <PrevButton style={prevButtonStyle} onPrevClick={onPrevClick} />
+              <PrevButton style={prevButtonStyle} onPrevClick={onPrevClick} size={buttonSize} />
             )}
           </>
         )}
@@ -326,14 +331,15 @@ const ReactCarousel = ({
             renderedItemCount={renderedItemCount}
             setCurrentIndex={setCurrentIndex}
             setCurrentTranslate={setCurrentTranslate}
-            style={indicatorsStyle}
+            style={indicatorsStyle?.style}
+            currentStyle={indicatorsStyle?.currentStyle}
             timer={autoPlayTimer}
             totalItemWidth={itemWidth + gapWidth}
           />
         )}
         <div
           ref={containerRef}
-          style={{ display: 'flex',width:'100%', willChange: 'transform', ...containerStyle }}
+          style={{ display: 'flex',width:'100%', willChange: 'transform',...(data.length < renderedItemCount ? {justifyContent:'center'}:{justifyContent:'start'}), ...containerStyle }}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           onTouchStart={handleTouchStart}
