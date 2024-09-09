@@ -1,6 +1,6 @@
 {
   "name": "react-responsive-dynamic-carousel",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "react responsive dynamic carousel",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

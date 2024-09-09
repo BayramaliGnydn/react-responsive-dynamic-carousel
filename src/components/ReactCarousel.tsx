@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Indicators from './Indicators';
 import { NextButton, PrevButton } from './Buttons';
 import '../style/index.css'
@@ -51,6 +51,7 @@ const ReactCarousel = ({
   const [itemWidth, setItemWidth] = useState(0)
   const [gapWidth, setGapWidth] = useState(0)
   const [renderedItemCount, setRenderedItemCount] = useState(1)
+  const [transformFactor,setTransformFactor] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const itemRef = useRef<HTMLDivElement>(null)
@@ -98,9 +99,6 @@ const ReactCarousel = ({
         clearInterval(autoPlayTimer.current)
       } //kullanıcı touch eventi başlatırsa autoplay durur
       containerRef.current.style.transform = `translate3d(${currentTranslate + diffX}px,0,0)`
-      if (typeof document !== 'undefined') {
-        document.querySelector('body')!.style.overflowY = 'hidden' // touch eventi başlayınca scroll durur
-      }
     }
   }
 
@@ -114,10 +112,10 @@ const ReactCarousel = ({
       setCurrentIndex((prevIndex) => {
         let newIndex = prevIndex
         if (Math.abs(diff) > tolerance) {
-          if (diff < 0 && prevIndex < data.length - 1) {
+          if (diff * -transformFactor < 0 && prevIndex < data.length - 1) {
             newIndex = prevIndex + 1
           }
-          else if (diff > 0 && prevIndex > 0) {
+          else if (diff * -transformFactor > 0 && prevIndex > 0) {
             newIndex = prevIndex - 1
           }
         }
@@ -127,17 +125,16 @@ const ReactCarousel = ({
         /* offset: mobil carousel için bir önceki ve bir sonraki elementin
          gözükmesi için sag sol boşluk */
 
-        let newTranslate = -newIndex * (itemWidth + gapWidth) +
-          offset - (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0)
+        let newTranslate = newIndex * (itemWidth + gapWidth) +
+        -transformFactor * offset - (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0)
         /* kullanıcının verdiği padding değerine göre yeni translate hesaplaması */
-
         if (newIndex === data.length - renderedItemCount) {
-          newTranslate += offset -
-            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0)
+          newTranslate = newTranslate + ( -transformFactor * offset -
+            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0))
         }
         else if (newIndex === 0) {
-          newTranslate -= offset -
-            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0)
+          newTranslate = newTranslate - ( -transformFactor * offset -
+            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0))
         }
         if (containerRef.current) {
           containerRef.current.style.transition = carouselTransformAnimation
@@ -148,20 +145,23 @@ const ReactCarousel = ({
       })
     }
     if (typeof document !== 'undefined') {
-      document.querySelector('body')!.style.overflowY = ''
       scrolling.current = false
       touchAngle.current = null
     }
   }
 
   useEffect(() => {
-    if (typeof window !== undefined) {
+    const opts: AddEventListenerOptions & EventListenerOptions = { passive: false };
+    if (typeof window !== 'undefined') {
       viewportWidth.current = window.innerWidth
       resizeCalc()
       window.addEventListener('resize', debouncedResize)
+      window.addEventListener('touchmove', stopScroll, opts);
     }
-    return () =>
+    return () =>{
       window.removeEventListener('resize', debouncedResize)
+      window.removeEventListener('touchmove', stopScroll, opts)
+    }
   }, [])
 
   useEffect(() => {
@@ -178,6 +178,13 @@ const ReactCarousel = ({
     }
   }, [itemWidth,renderedItemCount])
 
+  const stopScroll = (event:TouchEvent) => {
+    if(scrolling.current){
+      event.preventDefault()
+    }
+    return false
+  }
+
   const debouncedResize = useCallback(() => {
     if (callerTimeout.current) {
       clearTimeout(callerTimeout.current)
@@ -192,11 +199,14 @@ const ReactCarousel = ({
   }, [])
 
   const resizeCalc = () => {
-    if (itemRef.current && boxRef.current && containerRef.current) {
+    if (itemRef.current && boxRef.current && containerRef.current && viewportWidth.current) {
+      if(document.dir === 'rtl'){
+        setTransformFactor(1)
+      }
       const itemW = itemRef.current.clientWidth
       setItemWidth(itemW) // alt component width
       boxRef.current.style.width = '100%'
-      const maxWidth = boxRef.current.clientWidth - (renderButton ? 80 : 0)
+      const maxWidth = boxRef.current.clientWidth - ((renderButton && viewportWidth.current > 650) ? 80 : 0)
       let renderedItem = renderedItemCount
       if (maxItem !== 1) {
         const calculatedItemCount =
@@ -205,7 +215,6 @@ const ReactCarousel = ({
           maxItem : calculatedItemCount
         setRenderedItemCount(renderedItem === 0 ? 1 : renderedItem)
       }//maxItem 1 değilse renderlanacak item sayısı belirleme
-
       const gapWidth = parseFloat(containerRef.current.style.gap)
       setGapWidth(gapWidth) // renderlanan elemanlar arası boşluk
       if (boxRef.current.clientWidth > 650 && maxItem !== 1) {
@@ -246,17 +255,17 @@ const ReactCarousel = ({
             const boxWidth = boxRef.current!.clientWidth
             const offset = (boxWidth - itemWidth) / 2
             if(prevIndex === 0){
-                newTranslate = (newIndex * (itemWidth + gapWidth) - offset) * -1
+                newTranslate = (newIndex * (itemWidth + gapWidth) - offset) * transformFactor
               }
             else if(prevIndex + 1 === data.length - 1){
-                newTranslate = (newIndex * (itemWidth + gapWidth) - 2*offset) * -1
+                newTranslate = (newIndex * (itemWidth + gapWidth) - 2*offset) * transformFactor
               }
             else{
-                newTranslate = ((newIndex * (itemWidth + gapWidth)) - offset )* -1
+                newTranslate = ((newIndex * (itemWidth + gapWidth)) - offset )* transformFactor
               }
           }
           else{
-            newTranslate = (newIndex * (itemWidth + gapWidth)) * -1
+            newTranslate = (newIndex * (itemWidth + gapWidth)) * transformFactor
           }
           //atanan yeni indexe ait translate hesaplaması
         }
@@ -338,8 +347,9 @@ const ReactCarousel = ({
           />
         )}
         <div
+          id='container'
           ref={containerRef}
-          style={{ display: 'flex',width:'100%', willChange: 'transform',...(data.length < renderedItemCount ? {justifyContent:'center'}:{justifyContent:'start'}), ...containerStyle }}
+          style={{ display: 'flex',width:'100%', willChange: 'transform',...((data.length < renderedItemCount || data.length < 2) ? {justifyContent:'center'}:{justifyContent:'start'}), ...containerStyle }}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           onTouchStart={handleTouchStart}
