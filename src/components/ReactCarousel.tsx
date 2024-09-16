@@ -28,7 +28,7 @@ const ReactCarousel = ({
   data,
   Component,
   maxItem = 4,
-  containerStyle = { gap: '15px' },
+  containerStyle,
   carouselTransformAnimation = 'transform 300ms',
   prevButtonStyle,
   nextButtonStyle,
@@ -37,11 +37,11 @@ const ReactCarousel = ({
   renderIndicators,
   autoPlay,
   extraWidth = 0,
-  recalculationTime = 100,
+  recalculationTime = 500,
   autoPlayTime = 2000,
   props,
   tolerance = 100,
-  step,
+  step = 1,
   buttonSize,
 }: ReactCarouselProps) => {
   const [startX, setStartX] = useState(0)
@@ -54,7 +54,6 @@ const ReactCarousel = ({
   const [transformFactor,setTransformFactor] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const boxRef = useRef<HTMLDivElement>(null)
-  const itemRef = useRef<HTMLDivElement>(null)
   const callerTimeout = useRef<ReturnType<typeof setInterval> | null>(null)
   const autoPlayTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const viewportWidth = useRef<number | null>(null)
@@ -124,23 +123,19 @@ const ReactCarousel = ({
         const offset = (boxWidth - itemWidth) / 2
         /* offset: mobil carousel için bir önceki ve bir sonraki elementin
          gözükmesi için sag sol boşluk */
-
-        let newTranslate = newIndex * (itemWidth + gapWidth) +
-        -transformFactor * offset - (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0)
+        let newTranslate = newIndex * (itemWidth + gapWidth) + -offset
         /* kullanıcının verdiği padding değerine göre yeni translate hesaplaması */
         if (newIndex === data.length - renderedItemCount) {
-          newTranslate = newTranslate + ( -transformFactor * offset -
-            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0))
+          newTranslate += -offset 
         }
         else if (newIndex === 0) {
-          newTranslate = newTranslate - ( -transformFactor * offset -
-            (containerStyle.padding ? parseInt(containerStyle.padding as string) : 0))
+          newTranslate -= -offset
         }
         if (containerRef.current) {
           containerRef.current.style.transition = carouselTransformAnimation
-          containerRef.current.style.transform = `translate3d(${newTranslate}px,0,0)`
+          containerRef.current.style.transform = `translate3d(${newTranslate * transformFactor}px,0,0)`
         }
-        setCurrentTranslate(newTranslate)
+        setCurrentTranslate(newTranslate * transformFactor)
         return newIndex
       })
     }
@@ -162,7 +157,7 @@ const ReactCarousel = ({
       window.removeEventListener('resize', debouncedResize)
       window.removeEventListener('touchmove', stopScroll, opts)
     }
-  }, [])
+  }, [containerRef.current?.children[0].clientWidth])
 
   useEffect(() => {
     if (autoPlayTimer.current) {
@@ -192,18 +187,20 @@ const ReactCarousel = ({
     callerTimeout.current = setTimeout(() => {
       const currentViewportWidth = window.innerWidth
       if (currentViewportWidth !== viewportWidth.current) {
-        resizeCalc()
         viewportWidth.current = currentViewportWidth
+        resizeCalc()
       }
     }, recalculationTime)
   }, [])
 
   const resizeCalc = () => {
-    if (itemRef.current && boxRef.current && containerRef.current && viewportWidth.current) {
+    if (boxRef.current && containerRef.current && viewportWidth.current) {
+      let transformF = -1
       if(document.dir === 'rtl'){
-        setTransformFactor(1)
+        transformF = 1
+        setTransformFactor(transformF)
       }
-      const itemW = itemRef.current.clientWidth
+      const itemW = containerRef.current.children[0].clientWidth
       setItemWidth(itemW) // alt component width
       boxRef.current.style.width = '100%'
       const maxWidth = boxRef.current.clientWidth - ((renderButton && viewportWidth.current > 650) ? 80 : 0)
@@ -213,7 +210,7 @@ const ReactCarousel = ({
           Math.floor(maxWidth / itemW) // ekrana sığan maximum eleman sayısı
         renderedItem /* renderlanacak eleman sayısı */ = maxItem < calculatedItemCount ?
           maxItem : calculatedItemCount
-        setRenderedItemCount(renderedItem === 0 ? 1 : renderedItem)
+        setRenderedItemCount(renderedItem === 0 || viewportWidth.current < 650 ? 1 : renderedItem)
       }//maxItem 1 değilse renderlanacak item sayısı belirleme
       const gapWidth = parseFloat(containerRef.current.style.gap)
       setGapWidth(gapWidth) // renderlanan elemanlar arası boşluk
@@ -225,10 +222,12 @@ const ReactCarousel = ({
 
       setCurrentIndex((prev) => {
         if (containerRef.current) {
-          const cTranslate = prev * (itemW + gapWidth) // mevcut translate hesaplaması (gap + item)
-          containerRef.current.style.transform = `translate3d(-${cTranslate}px,0,0)`
+          const offset = (boxRef.current!.clientWidth - itemW) / 2
+          const cTranslate = prev * (itemW + gapWidth) + (
+            viewportWidth.current! < 650 && prev !== 0 && prev !== data.lenght - renderedItemCount ? -offset : 0) // mevcut translate hesaplaması (gap + item)
+          containerRef.current.style.transform = `translate3d(${cTranslate * transformF}px,0,0)`
           containerRef.current.style.transition = 'none'
-          setCurrentTranslate(cTranslate)
+          setCurrentTranslate(cTranslate * transformF)
         }
         return prev
       })
@@ -270,7 +269,7 @@ const ReactCarousel = ({
           //atanan yeni indexe ait translate hesaplaması
         }
       }
-      setCurrentTranslate(newTranslate)
+      setCurrentTranslate(newTranslate * transformFactor)
       if (containerRef.current) {
         containerRef.current.style.transition = carouselTransformAnimation
         containerRef.current.style.transform = `translate3d(${newTranslate}px,0,0)`
@@ -284,16 +283,15 @@ const ReactCarousel = ({
       if (autoPlayTimer.current) {
         clearInterval(autoPlayTimer.current)
       }//kullanıcı geri butonuna tıklarsa autoplay durur
-      let newTranslate = (prevIndex - (step ?? 1)) * (itemWidth + gapWidth)
+      let newTranslate = (prevIndex - step * -transformFactor) * (itemWidth + gapWidth)
 
-      setCurrentTranslate(newTranslate)
+      setCurrentTranslate(newTranslate * transformFactor)
 
       if (containerRef.current) {
         containerRef.current.style.transition = carouselTransformAnimation
-        containerRef.current.style.transform = `translate3d(-${newTranslate}px,0,0)`
+        containerRef.current.style.transform = `translate3d(${newTranslate * transformFactor}px,0,0)`
       }
-
-      return prevIndex - (step ?? 1)
+      return prevIndex - step * -transformFactor
     })
 
   const onNextClick = () =>
@@ -302,16 +300,16 @@ const ReactCarousel = ({
         clearInterval(autoPlayTimer.current)
       }//kullanıcı ileri butonuna tıklarsa autoplay durur
 
-      let newTranslate = (prevIndex + (step ?? 1)) * (itemWidth + gapWidth)
+      let newTranslate = (prevIndex + step * -transformFactor) * (itemWidth + gapWidth)
 
-      setCurrentTranslate(newTranslate)
+      setCurrentTranslate(newTranslate * transformFactor)
 
       if (containerRef.current) {
         containerRef.current.style.transition = carouselTransformAnimation
-        containerRef.current.style.transform = `translate3d(-${newTranslate}px,0,0)`
+        containerRef.current.style.transform = `translate3d(${newTranslate * transformFactor}px,0,0)`
       }
 
-      return prevIndex + (step ?? 1)
+      return prevIndex + step * -transformFactor
     })
 
   return (
@@ -321,12 +319,13 @@ const ReactCarousel = ({
       >
         {renderButton && (
           <>
-            {currentIndex < data?.length -
-              renderedItemCount &&
+            {((currentIndex < data?.length -
+              renderedItemCount && document.dir !== 'rtl') || (currentIndex != 0 && document.dir === 'rtl'))  &&
               (
                 <NextButton style={nextButtonStyle} onNextClick={onNextClick} size={buttonSize} />
               )}
-            {currentIndex != 0 && (
+            {((currentIndex != 0 && document.dir !== 'rtl') || (currentIndex < data?.length -
+              renderedItemCount && document.dir==='rtl')) && (
               <PrevButton style={prevButtonStyle} onPrevClick={onPrevClick} size={buttonSize} />
             )}
           </>
@@ -349,13 +348,13 @@ const ReactCarousel = ({
         <div
           id='container'
           ref={containerRef}
-          style={{ display: 'flex',width:'100%', willChange: 'transform',...((data.length < renderedItemCount || data.length < 2) ? {justifyContent:'center'}:{justifyContent:'start'}), ...containerStyle }}
+          style={{ display: 'flex',width:'100%', willChange: 'transform',...((data.length < renderedItemCount || data.length < 2) ? {justifyContent:'center'}:{justifyContent:'start'}), ...{gap:'15px',...containerStyle}}}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           onTouchStart={handleTouchStart}
         >
          {data?.map((item: any, index: number) => (
-            <div key={index} ref={itemRef} style={maxItem === 1 ? { flex: `0 0 100%` } : {}}>
+            <div key={index} style={maxItem === 1 ? { flex: `0 0 100%` } : {}}>
               <Component
                 {...item}
                 {...props}
